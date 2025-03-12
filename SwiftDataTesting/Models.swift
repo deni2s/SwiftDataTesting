@@ -10,36 +10,20 @@ import SwiftData
 
 @Model
 class Car: Identifiable {
-    @Attribute(.unique)
-    var name: String
-    var carData: CarData
-
-    init(name: String, carData: CarData) {
-        self.name = name
-        self.carData = carData
-    }
-
-    func copy() -> Car {
-        Car(
-            name: "temporaryNewName",
-            carData: carData
-        )
-    }
-}
-
-@Model
-class CarData: Identifiable {
     var id: UUID = UUID()
+    var name: String
     var features: [Feature]
 
-    init(id: UUID = UUID(), features: [Feature]) {
+    init(id: UUID = UUID(), name: String, features: [Feature]) {
         self.id = id
+        self.name = name
         self.features = features
     }
 
-   func copy() -> CarData {
-       CarData(
+   func copy() -> Car {
+       Car(
             id: UUID(),
+            name: name,
             features: features
 
         )
@@ -56,13 +40,13 @@ class Feature: Identifiable {
 
     @Relationship(
         deleteRule:.cascade,
-        inverse: \CarData.features
+        inverse: \Car.features
     )
-    private(set) var carDatas: [CarData]?
+    private(set) var cars: [Car]?
 
-    init(id: Int, name: String, carDatas: [CarData]? = nil) {
+    init(id: Int, name: String, cars: [Car]? = nil) {
         self.id = id
         self.name = name
-        self.carDatas = carDatas
+        self.cars = cars
     }
 }

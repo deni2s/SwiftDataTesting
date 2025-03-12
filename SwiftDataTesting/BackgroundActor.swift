@@ -12,12 +12,15 @@ import SwiftData
 actor BackgroundActor: Sendable {
 
     func prepareData() {
-        let feature1 = Feature(id: 1, name: "green")
-
-        let carData1 = CarData(features: [feature1])
-        let car1 = Car(name: "BMW", carData: carData1)
-        modelContext.insert(car1)
-
+        try! modelContext.delete(model: Car.self)
+        let car = Car(
+            name: "BMW",
+            features: [
+                Feature(id: 1, name: "green"),
+                Feature(id: 2, name: "slow")
+            ]
+        )
+        modelContext.insert(car)
         try! modelContext.save()
     }
 
@@ -25,28 +28,27 @@ actor BackgroundActor: Sendable {
         let fetchDescriptor = FetchDescriptor<Car>(
             predicate: #Predicate<Car> {
                 car in
-                car.name == name
+                true
             }
         )
         let cars = try! modelContext.fetch(
             fetchDescriptor
         )
         let car = cars.first!
-        print("expected car features:\n\t", car.carData.features.map{$0.name}) //prints ["green"] - expected
+        print("expected car features:\n\t", car.features.map{$0.name}) //prints ["slow", "green"] - expected
         let newCar = car.copy()
-        newCar.name = "Another car"
-        newCar.carData = car.carData.copy()
-        print("expected newCar features:\n\t", newCar.carData.features.map{$0.name}) //prints ["green"] - expected
+        print("expected newCar features:\n\t", newCar.features.map{$0.name}) //prints ["slow", "green"] - expected
         modelContext.insert(newCar)
-        print("UNEXPECTED newCar features:\n\t", newCar.carData.features.map{$0.name}) //prints ["green", "green"] - UNEXPECTED!
+//        newCar.features = car.features //this workaround helps!
+        print("UNEXPECTED newCar features:\n\t", newCar.features.map{$0.name}) //prints ["slow", "green", "slow", "green"] - UNEXPECTED!
 
-        /*some code planned here modifying newCar.featuresA, but they are wrong here causing issues,
+        /*some code planned here modifying newCar.features, but they are wrong here causing issues,
 for example finding first expected green value and removing it will still keep the unexpected duplicate
 (unless iterating over all arrays to delete all unexpected duplicates - not optimal and sloooooow).
 
-        for i in 0..<newCar.carData.features.count {
-            if newCar.carData.features[i].name == "green" {
-                newCar.carData.features.remove(at: i)
+        for i in 0..<newCar.features.count {
+            if newCar.features[i].name == "green" {
+                newCar.features.remove(at: i)
                 print("this should remove the green feature")
                 break //feature expected to be removed -> no need to continue iterations
             }
@@ -54,7 +56,7 @@ for example finding first expected green value and removing it will still keep t
          */
 
         try! modelContext.save()
-        print("after save newCar features:\n\t", newCar.carData.features.map{$0.name}) //prints ["green"] - self-auto-healed???
+        print("after save newCar features:\n\t", newCar.features.map{$0.name}) //prints ["slow", "green"] - self-auto-healed???
     }
 }
 
